@@ -17,12 +17,12 @@ impl Ray {
         self.origin + t * self.direction
     }
 
-    pub fn origin(&self) -> Vec3 {
-        self.origin
+    pub fn origin(&self) -> &Vec3 {
+        &self.origin
     }
-    
-    pub fn direction(&self) -> Vec3 {
-        self.direction
+
+    pub fn direction(&self) -> &Vec3 {
+        &self.direction
     }
 
 }

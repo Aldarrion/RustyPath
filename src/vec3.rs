@@ -104,6 +104,19 @@ impl ops::Add<&Vec3> for Vec3 {
     }
 }
 
+impl ops::Add<Vec3> for &Vec3 {
+    type Output = Vec3;
+    
+    fn add(self, other: Vec3) -> Vec3 {
+        Vec3 {
+            v: [self.v[0] + other.v[0],
+                self.v[1] + other.v[1],
+                self.v[2] + other.v[2]
+            ]
+        }
+    }
+}
+
 impl ops::Add for Vec3 {
     type Output = Vec3;
     
@@ -141,10 +154,30 @@ impl ops::Neg for Vec3 {
     }
 }
 
+impl ops::Neg for &Vec3 {
+    type Output = Vec3;
+    fn neg(self) -> Vec3 {
+        Vec3 {
+            v: [
+                -self.v[0],
+                -self.v[1],
+                -self.v[2]
+            ]
+        }
+    }
+}
+
 impl ops::Sub for Vec3 {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
         &self + &(-other)
+    }
+}
+
+impl<'a, 'b> ops::Sub<&'a Vec3> for &'b Vec3 {
+    type Output = Vec3;
+    fn sub(self, other: &'a Vec3) -> Vec3 {
+        self + &(-other)
     }
 }
 
