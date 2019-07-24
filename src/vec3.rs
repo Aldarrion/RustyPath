@@ -1,6 +1,10 @@
 use std::ops;
 
-#[derive(Copy, Clone)]
+pub fn sqr(x: f32) -> f32 {
+    x * x
+}
+
+#[derive(Copy, Clone, Debug)]
 pub struct Vec3 {
     v: [f32; 3]
 }
