@@ -236,3 +236,14 @@ impl ops::Div<f32> for Vec3 {
         }
     }
 }
+
+impl ops::DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, scalar: f32) {
+        *self = Self {
+            v: [self.v[0] / scalar,
+                self.v[1] / scalar,
+                self.v[2] / scalar
+            ]
+        }
+    }
+}
