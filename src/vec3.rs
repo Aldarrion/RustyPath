@@ -197,7 +197,7 @@ impl ops::Mul<f32> for Vec3 {
     }
 }
 
-impl<'a> ops::Mul<f32> for &'a Vec3  {
+impl ops::Mul<f32> for &Vec3  {
     type Output = Vec3;
     fn mul(self, scalar: f32) -> Vec3 {
         Vec3 {
@@ -232,6 +232,20 @@ impl ops::Div<f32> for Vec3 {
             v: [self.v[0] / scalar,
                 self.v[1] / scalar,
                 self.v[2] / scalar
+            ]
+        }
+    }
+}
+
+impl ops::Div<f32> for &Vec3 {
+    type Output = Vec3;
+    
+    fn div(self, scalar: f32) -> Vec3 {
+        Vec3 {
+            v: [
+                self.v[0] * scalar,
+                self.v[1] * scalar,
+                self.v[2] * scalar
             ]
         }
     }
