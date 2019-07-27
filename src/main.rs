@@ -8,16 +8,18 @@ extern crate rand;
 use rand::Rng;
 use camera::Camera;
 use hittable::{Sphere, Hittable, HittableList};
-use vec3::Vec3;
+use vec3::{Vec3, random_in_unit_sphere};
 use ray::Ray;
 
 fn color(r: &Ray, world: &Hittable) -> Vec3 {
-    if let Some(result) = world.hit(r, 0.0, std::f32::MAX) {
-        0.5 * (Vec3::one() + &result.normal)
+    // 0.001 to avoid self-intersections
+    if let Some(result) = world.hit(r, 0.001, std::f32::MAX) {
+        let target = result.p + result.normal + random_in_unit_sphere();
+        0.5 * color(&Ray::new(result.p, target - result.p), world)
     } else {
         let unit_dir = r.direction().normalized();
         let t = 0.5 * (unit_dir.y() + 1.0);
-        (1.0 - t) * Vec3::one() + t * Vec3::new(0.5, 0.7, 1.0)
+        (1.0 - t) * Vec3::one() + t * Vec3::new(0.5, 0.7, 1.0).to_linear()
     }
 }
 
@@ -47,6 +49,7 @@ fn main() {
                 col += &color(&r, &world);
             }
             col /= ns as f32;
+            col = col.to_srgb();
 
             let ir = (255.99 * col.r()) as i32;
             let ig = (255.99 * col.g()) as i32;

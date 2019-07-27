@@ -1,7 +1,26 @@
+extern crate rand;
+
+use rand::Rng;
 use std::ops;
 
 pub fn sqr(x: f32) -> f32 {
     x * x
+}
+
+fn to_linear(srgb_col: f32) -> f32 {
+    if srgb_col <= 0.04045 {
+        srgb_col / 12.92
+    } else {
+        ((srgb_col + 0.055) / 1.055).powf(2.4)
+    }
+}
+
+fn to_srgb(linear_col: f32) -> f32 {
+    if linear_col <= 0.0031308 {
+        linear_col * 12.92
+    } else {
+        1.055 * linear_col.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -79,6 +98,14 @@ impl Vec3 {
                 self.v[0] * other.v[1] - self.v[1] * other.v[0]
             ]
         }
+    }
+
+    pub fn to_srgb(&self) -> Vec3 {
+        Vec3::new(to_srgb(self.r()), to_srgb(self.g()), to_srgb(self.b()))
+    }
+
+    pub fn to_linear(&self) -> Vec3 {
+        Vec3::new(to_linear(self.r()), to_linear(self.g()), to_linear(self.b()))
     }
 }
 
@@ -258,6 +285,16 @@ impl ops::DivAssign<f32> for Vec3 {
                 self.v[1] / scalar,
                 self.v[2] / scalar
             ]
+        }
+    }
+}
+
+pub fn random_in_unit_sphere() -> Vec3 {
+    let mut rng = rand::thread_rng();
+    loop {
+        let p = 2.0 * Vec3::new(rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>()) - Vec3::one();
+        if p.length_sqr() < 1.0 {
+            return p;
         }
     }
 }
