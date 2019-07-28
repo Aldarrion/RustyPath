@@ -2,6 +2,7 @@ use crate::vec3::{Vec3, sqr, random_in_unit_sphere};
 use crate::ray::Ray;
 use std::vec::Vec;
 use std::boxed::Box;
+use std::rc::Rc;
 
 
 pub trait Material {
@@ -13,8 +14,16 @@ pub struct Lambertian {
     albedo: Vec3
 }
 
+impl Lambertian {
+    pub fn new(albedo: Vec3) -> Lambertian {
+        Lambertian {
+            albedo
+        }
+    }
+}
+
 impl Material for Lambertian {
-    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
+    fn scatter(&self, _ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
         let target = hit.p + hit.normal + random_in_unit_sphere();
         let scattered = Ray::new(hit.p, target - hit.p);
         let attenuation = self.albedo;
@@ -23,20 +32,38 @@ impl Material for Lambertian {
 }
 
 
-struct Metal {
+pub struct Metal {
     albedo: Vec3
 }
 
+impl Metal {
+    pub fn new(albedo: Vec3) -> Metal {
+        Metal {
+            albedo
+        }
+    }
+}
+
 impl Material for Metal {
-    
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
+        let scattered = Ray::new(hit.p, ray.direction().normalized().reflect(&hit.normal));
+        if scattered.direction().dot(&hit.normal) > 0.0 {
+            Some((
+                scattered,
+                self.albedo
+            ))
+        } else {
+            None
+        }
+    }
 }
 
 
 pub struct HitRecord {
-    pub t: f32,
+    pub material: Rc<Material>,
     pub p: Vec3,
     pub normal: Vec3,
-    material: Box<Material>
+    pub t: f32
 }
 
 pub trait Hittable {
@@ -45,13 +72,15 @@ pub trait Hittable {
 
 pub struct Sphere {
     center: Vec3,
+    material: Rc<Material>,
     radius: f32
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32) -> Sphere {
+    pub fn new(center: Vec3, radius: f32, material: Rc<Material>) -> Sphere {
         Sphere {
             center,
+            material,
             radius
         }
     }
@@ -69,9 +98,10 @@ impl Hittable for Sphere {
             if temp < t_max && temp > t_min {
                 let point = r.point_at(temp);
                 return Some(HitRecord {
-                    t: temp,
+                    material: self.material.clone(),
                     p: point,
-                    normal: (point - self.center) / self.radius
+                    normal: (point - self.center) / self.radius,
+                    t: temp
                 });
             }
 
@@ -79,9 +109,10 @@ impl Hittable for Sphere {
             if temp < t_max && temp > t_min {
                 let point = r.point_at(temp);
                 return Some(HitRecord {
-                    t: temp,
+                    material: self.material.clone(),
                     p: point,
-                    normal: (point - self.center) / self.radius
+                    normal: (point - self.center) / self.radius,
+                    t: temp
                 });
             }
         }

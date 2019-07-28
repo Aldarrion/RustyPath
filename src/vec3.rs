@@ -82,7 +82,7 @@ impl Vec3 {
         self.v[2] /= len;
     }
 
-    pub fn normalized(self) -> Vec3 {
+    pub fn normalized(&self) -> Vec3 {
         self / self.length()
     }
 
@@ -256,6 +256,20 @@ impl ops::Mul<&Vec3> for f32 {
     }
 }
 
+impl ops::Mul<&Vec3> for &Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, v: &Vec3) -> Vec3 {
+        Vec3 {
+            v: [
+                self.v[0] * v.v[0],
+                self.v[1] * v.v[1],
+                self.v[2] * v.v[2]
+            ]
+        }
+    }
+}
+
 impl ops::Div<f32> for Vec3 {
     type Output = Self;
     fn div(self, scalar: f32) -> Self {
@@ -274,9 +288,9 @@ impl ops::Div<f32> for &Vec3 {
     fn div(self, scalar: f32) -> Vec3 {
         Vec3 {
             v: [
-                self.v[0] * scalar,
-                self.v[1] * scalar,
-                self.v[2] * scalar
+                self.v[0] / scalar,
+                self.v[1] / scalar,
+                self.v[2] / scalar
             ]
         }
     }

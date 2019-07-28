@@ -7,15 +7,20 @@ extern crate rand;
 
 use rand::Rng;
 use camera::Camera;
-use hittable::{Sphere, Hittable, HittableList};
-use vec3::{Vec3, random_in_unit_sphere};
+use hittable::{Sphere, Hittable, HittableList, Lambertian, Metal};
+use vec3::{Vec3};
 use ray::Ray;
+use std::rc::Rc;
 
-fn color(r: &Ray, world: &Hittable) -> Vec3 {
+fn color(r: &Ray, world: &Hittable, depth: i32) -> Vec3 {
     // 0.001 to avoid self-intersections
     if let Some(result) = world.hit(r, 0.001, std::f32::MAX) {
-        let target = result.p + result.normal + random_in_unit_sphere();
-        0.5 * color(&Ray::new(result.p, target - result.p), world)
+        match &result.material.scatter(r, &result) {
+            Some((scatter_result, attenuation)) if depth < 50 => {
+                 attenuation * &color(&scatter_result, world, depth + 1)
+            }
+            _ => Vec3::zero()
+        }
     } else {
         let unit_dir = r.direction().normalized();
         let t = 0.5 * (unit_dir.y() + 1.0);
@@ -32,8 +37,10 @@ fn main() {
 
     let camera = Camera::new_default();
     let world = HittableList {items: vec![
-        Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5)),
-        Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0))
+        Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.8, 0.3, 0.3).to_linear())))),
+        Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, Rc::new(Lambertian::new(Vec3::new(0.8, 0.8, 0.0).to_linear())))),
+        Box::new(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.6, 0.2).to_linear())))),
+        Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8).to_linear()))))
     ]};
 
     let mut rng = rand::thread_rng();
@@ -46,7 +53,7 @@ fn main() {
                 let u = (i as f32 + rng.gen::<f32>()) / nx as f32;
                 let v = (j as f32 + rng.gen::<f32>()) / ny as f32;
                 let r = camera.get_ray(u, v);
-                col += &color(&r, &world);
+                col += &color(&r, &world, 0);
             }
             col /= ns as f32;
             col = col.to_srgb();
