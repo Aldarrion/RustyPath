@@ -107,6 +107,10 @@ impl Vec3 {
     pub fn to_linear(&self) -> Vec3 {
         Vec3::new(to_linear(self.r()), to_linear(self.g()), to_linear(self.b()))
     }
+
+    pub fn reflect(&self, normal: &Vec3) -> Vec3 {
+        self - &(2.0 * self.dot(normal) * normal)
+    }
 }
 
 impl<'a> ops::Add<&Vec3> for &'a Vec3 {

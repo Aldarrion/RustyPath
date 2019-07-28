@@ -1,12 +1,42 @@
-use crate::vec3::{Vec3, sqr};
+use crate::vec3::{Vec3, sqr, random_in_unit_sphere};
 use crate::ray::Ray;
 use std::vec::Vec;
 use std::boxed::Box;
 
+
+pub trait Material {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)>;
+}
+
+
+pub struct Lambertian {
+    albedo: Vec3
+}
+
+impl Material for Lambertian {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
+        let target = hit.p + hit.normal + random_in_unit_sphere();
+        let scattered = Ray::new(hit.p, target - hit.p);
+        let attenuation = self.albedo;
+        Some((scattered, attenuation))
+    }
+}
+
+
+struct Metal {
+    albedo: Vec3
+}
+
+impl Material for Metal {
+    
+}
+
+
 pub struct HitRecord {
     pub t: f32,
     pub p: Vec3,
-    pub normal: Vec3
+    pub normal: Vec3,
+    material: Box<Material>
 }
 
 pub trait Hittable {
