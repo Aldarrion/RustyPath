@@ -1,8 +1,9 @@
-use crate::vec3::{Vec3, sqr, random_in_unit_sphere};
+use crate::vec3::{Vec3, sqr, random_in_unit_sphere, schlick};
 use crate::ray::Ray;
 use std::vec::Vec;
 use std::boxed::Box;
 use std::rc::Rc;
+use rand::Rng;
 
 
 pub trait Material {
@@ -57,6 +58,42 @@ impl Material for Metal {
         } else {
             None
         }
+    }
+}
+
+
+pub struct Dielectric {
+    ref_idx: f32
+}
+
+impl Dielectric {
+    pub fn new(ref_idx: f32) -> Dielectric {
+        Dielectric {
+            ref_idx
+        }
+    }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
+        let (outward_normal, ni_over_nt, cosine) = if ray.direction().dot(&hit.normal) > 0.0 {
+            (-hit.normal, 
+            self.ref_idx,
+            self.ref_idx * ray.direction().dot(&hit.normal) / ray.direction().length())
+        } else {
+            (hit.normal, 
+            1.0 / self.ref_idx,
+            -ray.direction().dot(&hit.normal) / ray.direction().length())
+        };
+
+        let attuneation = Vec3::new(1.0, 1.0, 1.0);
+        if let Some(refracted) = ray.direction().refract(&outward_normal, ni_over_nt) {
+            if rand::thread_rng().gen::<f32>() >= schlick(cosine, self.ref_idx) {
+                return Some((Ray::new(hit.p, refracted), attuneation));
+            }
+        }
+
+        Some((Ray::new(hit.p, ray.direction().reflect(&hit.normal)), attuneation))
     }
 }
 

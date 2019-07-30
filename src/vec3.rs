@@ -111,6 +111,17 @@ impl Vec3 {
     pub fn reflect(&self, normal: &Vec3) -> Vec3 {
         self - &(2.0 * self.dot(normal) * normal)
     }
+
+    pub fn refract(&self, normal: &Vec3, ni_over_nt: f32) -> Option<Vec3> {
+        let uv = self.normalized();
+        let dt = uv.dot(normal);
+        let discriminant = 1.0 - sqr(ni_over_nt) * (1.0 - sqr(dt));
+        if discriminant > 0.0 {
+            Some(ni_over_nt * (uv - normal * dt) - normal * discriminant.sqrt())
+        } else {
+            None
+        }
+    }
 }
 
 impl<'a> ops::Add<&Vec3> for &'a Vec3 {
@@ -315,4 +326,9 @@ pub fn random_in_unit_sphere() -> Vec3 {
             return p;
         }
     }
+}
+
+pub fn schlick(cosine: f32, ref_idx: f32) -> f32 {
+    let r0 = sqr((1.0 - ref_idx) / (1.0 + ref_idx));
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }

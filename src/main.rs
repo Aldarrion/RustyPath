@@ -7,7 +7,7 @@ extern crate rand;
 
 use rand::Rng;
 use camera::Camera;
-use hittable::{Sphere, Hittable, HittableList, Lambertian, Metal};
+use hittable::{Sphere, Hittable, HittableList, Lambertian, Metal, Dielectric};
 use vec3::{Vec3};
 use ray::Ray;
 use std::rc::Rc;
@@ -31,7 +31,7 @@ fn color(r: &Ray, world: &Hittable, depth: i32) -> Vec3 {
 fn main() {
     let nx = 800;
     let ny = 400;
-    let ns = 100;
+    let ns = 1000;
 
     println!("P3\n{} {}\n255", nx, ny);
 
@@ -40,7 +40,8 @@ fn main() {
         Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.8, 0.3, 0.3).to_linear())))),
         Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, Rc::new(Lambertian::new(Vec3::new(0.8, 0.8, 0.0).to_linear())))),
         Box::new(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.6, 0.2).to_linear(), 0.1)))),
-        Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, Rc::new(Metal::new(Vec3::new(0.8, 0.8, 0.8).to_linear(), 1.0))))
+        Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), 0.5, Rc::new(Dielectric::new(1.5)))),
+        //Box::new(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.45, Rc::new(Dielectric::new(1.5)))),
     ]};
 
     let mut rng = rand::thread_rng();
