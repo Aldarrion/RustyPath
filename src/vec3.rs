@@ -41,6 +41,18 @@ impl Vec3 {
         }
     }
 
+    pub fn up() -> Vec3 {
+        Vec3 { v: [0.0, 1.0, 0.0] }
+    }
+    
+    pub fn forward() -> Vec3 {
+        Vec3 { v: [0.0, 0.0, -1.0] }
+    }
+
+    pub fn right() -> Vec3 {
+        Vec3 { v: [1.0, 0.0, 0.0] }
+    }
+
     pub fn new(x: f32, y:f32, z:f32) -> Vec3 {
         Vec3 {
             v: [x, y, z]
@@ -94,7 +106,7 @@ impl Vec3 {
         Vec3 {
             v: [
                 self.v[1] * other.v[2] - self.v[2] * other.v[1],
-                -(self.v[0] * other.v[2] - self.v[2] * other.v[0]),
+                self.v[2] * other.v[0] - self.v[0] * other.v[2],
                 self.v[0] * other.v[1] - self.v[1] * other.v[0]
             ]
         }
