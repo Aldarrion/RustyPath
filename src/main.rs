@@ -29,13 +29,17 @@ fn color(r: &Ray, world: &Hittable, depth: i32) -> Vec3 {
 }
 
 fn main() {
-    let nx = 200;
-    let ny = 100;
-    let ns = 100;
+    let nx = 800;
+    let ny = 400;
+    let ns = 1000;
 
     println!("P3\n{} {}\n255", nx, ny);
 
-    let camera = Camera::new(&Vec3::new(-2.0, 2.0, 1.0), &Vec3::new(0.0, 0.0, -1.0), &Vec3::up(), 90.0, nx as f32 / ny as f32);
+    let look_from = Vec3::new(3.0, 1.0, 2.0);
+    let look_to = Vec3::new(0.0, 0.0, -1.0);
+    let focus_dist = (look_from - look_to).length();
+
+    let camera = Camera::new(&look_from, &look_to, &Vec3::up(), 20.0, nx as f32 / ny as f32, 1.0, focus_dist);
     let world = HittableList {items: vec![
         Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.8, 0.3, 0.3).to_linear())))),
         Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, Rc::new(Lambertian::new(Vec3::new(0.8, 0.8, 0.0).to_linear())))),

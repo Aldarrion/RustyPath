@@ -340,6 +340,17 @@ pub fn random_in_unit_sphere() -> Vec3 {
     }
 }
 
+/// Returns a random point in unit circle with center in origin
+pub fn random_in_unit_circle() -> Vec3 {
+    let mut rng = rand::thread_rng();
+    loop {
+        let p = 2.0 * Vec3::new(rng.gen::<f32>(), rng.gen::<f32>(), 0.0) - Vec3::new(1.0, 1.0, 0.0);
+        if p.length_sqr() < 1.0 {
+            return p;
+        }
+    }
+}
+
 pub fn schlick(cosine: f32, ref_idx: f32) -> f32 {
     let r0 = sqr((1.0 - ref_idx) / (1.0 + ref_idx));
     r0 + (1.0 - r0) * (1.0 - cosine).powi(5)

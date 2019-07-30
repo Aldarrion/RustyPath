@@ -1,30 +1,40 @@
-use crate::vec3::Vec3;
+use crate::vec3::{Vec3, random_in_unit_circle};
 use crate::ray::Ray;
 
 pub struct Camera {
     origin: Vec3,
     lower_left: Vec3,
     horizontal: Vec3,
-    vertical: Vec3
+    vertical: Vec3,
+    u: Vec3, // right
+    v: Vec3, // up
+    //w: Vec3, // -forward
+    lens_radius: f32,
 }
 
 impl Camera {
-    pub fn new(look_from: &Vec3, look_at: &Vec3, up: &Vec3, fov: f32, aspect: f32) -> Camera {
+    pub fn new(look_from: &Vec3, look_at: &Vec3, up: &Vec3, fov: f32, aspect: f32, aperture: f32, focus_dist: f32) -> Camera {
         let theta = fov.to_radians();
-        let half_height = (theta / 2.0).atan();
+        let half_height = (theta / 2.0).tan();
         let half_width = aspect * half_height;
         let w = (look_from - look_at).normalized();
-        let u = up.cross(&w);
+        let u = up.cross(&w).normalized();
         let v = w.cross(&u);
         Camera {
-            lower_left: look_from - &(half_width * u) - half_height * v - w,
-            horizontal: 2.0 * half_width * u,
-            vertical: 2.0 * half_height * v,
-            origin: *look_from
+            lower_left: look_from - &(half_width * focus_dist * u) - half_height * focus_dist * v - focus_dist * w,
+            horizontal: 2.0 * half_width * focus_dist * u,
+            vertical: 2.0 * half_height * focus_dist * v,
+            origin: *look_from,
+            u,
+            v,
+            //w,
+            lens_radius: aperture / 2.0
         }
     }
 
-    pub fn get_ray(&self, u: f32, v: f32) -> Ray {
-        Ray::new(self.origin, self.lower_left + u * self.horizontal + v * self.vertical - self.origin)
+    pub fn get_ray(&self, s: f32, t: f32) -> Ray {
+        let rd = self.lens_radius * random_in_unit_circle();
+        let offset = self.u * rd.x() + self.v * rd.y();
+        Ray::new(self.origin + &offset, self.lower_left + s * self.horizontal + t * self.vertical - self.origin - offset)
     }
 }
