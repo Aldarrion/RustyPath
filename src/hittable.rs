@@ -99,7 +99,7 @@ impl Material for Dielectric {
 
 
 pub struct HitRecord {
-    pub material: Rc<Material>,
+    pub material: Rc<dyn Material>,
     pub p: Vec3,
     pub normal: Vec3,
     pub t: f32
@@ -111,12 +111,12 @@ pub trait Hittable {
 
 pub struct Sphere {
     center: Vec3,
-    material: Rc<Material>,
+    material: Rc<dyn Material>,
     radius: f32
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32, material: Rc<Material>) -> Sphere {
+    pub fn new(center: Vec3, radius: f32, material: Rc<dyn Material>) -> Sphere {
         Sphere {
             center,
             material,
@@ -161,7 +161,7 @@ impl Hittable for Sphere {
 }
 
 pub struct HittableList {
-    pub items: Vec<Box<Hittable>>
+    pub items: Vec<Box<dyn Hittable>>
 }
 
 impl Hittable for HittableList {

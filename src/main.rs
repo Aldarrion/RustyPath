@@ -12,7 +12,7 @@ use vec3::{Vec3};
 use ray::Ray;
 use std::rc::Rc;
 
-fn color(r: &Ray, world: &Hittable, depth: i32) -> Vec3 {
+fn color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vec3 {
     // 0.001 to avoid self-intersections
     if let Some(result) = world.hit(r, 0.001, std::f32::MAX) {
         match &result.material.scatter(r, &result) {
@@ -28,7 +28,7 @@ fn color(r: &Ray, world: &Hittable, depth: i32) -> Vec3 {
     }
 }
 
-fn random_scene() -> Box<Hittable> {
+fn random_scene() -> Box<dyn Hittable> {
     let mut scene = HittableList { items: vec![] };
     scene.items.push(Box::new(Sphere::new(Vec3::new(0.0, -1000.0, 0.0), 1000.0, Rc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5).to_linear())))));
 
