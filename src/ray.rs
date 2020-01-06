@@ -2,14 +2,16 @@ use crate::vec3::Vec3;
 
 pub struct Ray {
     origin: Vec3,
-    direction: Vec3
+    direction: Vec3,
+    time: f32, // Time of exit
 }
 
 impl Ray {
-    pub fn new(origin: Vec3, direction: Vec3) -> Ray {
+    pub fn new(origin: Vec3, direction: Vec3, time: f32) -> Ray {
         Ray {
             origin,
-            direction
+            direction,
+            time
         }
     }
 
@@ -25,4 +27,7 @@ impl Ray {
         &self.direction
     }
 
+    pub fn time(&self) -> f32 {
+        self.time
+    }
 }

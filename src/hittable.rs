@@ -1,4 +1,4 @@
-use crate::vec3::{Vec3, sqr, random_in_unit_sphere, schlick};
+use crate::vec3::{Vec3, sqr, random_in_unit_sphere, schlick, clamp};
 use crate::ray::Ray;
 use std::vec::Vec;
 use std::boxed::Box;
@@ -24,9 +24,9 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
         let target = hit.p + hit.normal + random_in_unit_sphere();
-        let scattered = Ray::new(hit.p, target - hit.p);
+        let scattered = Ray::new(hit.p, target - hit.p, ray.time());
         let attenuation = self.albedo;
         Some((scattered, attenuation))
     }
@@ -49,7 +49,7 @@ impl Metal {
 
 impl Material for Metal {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
-        let scattered = Ray::new(hit.p, ray.direction().normalized().reflect(&hit.normal) + self.roughness * random_in_unit_sphere());
+        let scattered = Ray::new(hit.p, ray.direction().normalized().reflect(&hit.normal) + self.roughness * random_in_unit_sphere(), ray.time());
         if scattered.direction().dot(&hit.normal) > 0.0 {
             Some((
                 scattered,
@@ -89,11 +89,11 @@ impl Material for Dielectric {
         let attuneation = Vec3::new(1.0, 1.0, 1.0);
         if let Some(refracted) = ray.direction().refract(&outward_normal, ni_over_nt) {
             if rand::thread_rng().gen::<f32>() >= schlick(cosine, self.ref_idx) {
-                return Some((Ray::new(hit.p, refracted), attuneation));
+                return Some((Ray::new(hit.p, refracted, ray.time()), attuneation));
             }
         }
 
-        Some((Ray::new(hit.p, ray.direction().reflect(&hit.normal)), attuneation))
+        Some((Ray::new(hit.p, ray.direction().reflect(&hit.normal), ray.time()), attuneation))
     }
 }
 
@@ -151,6 +151,69 @@ impl Hittable for Sphere {
                     material: self.material.clone(),
                     p: point,
                     normal: (point - self.center) / self.radius,
+                    t: temp
+                });
+            }
+        }
+
+        None
+    }
+}
+
+pub struct MovingSphere {
+    position_start: Vec3,
+    position_end: Vec3,
+    time_start: f32,
+    time_end: f32,
+    radius: f32,
+    material: Rc<dyn Material>,
+}
+
+impl MovingSphere {
+    pub fn new(position_start: Vec3, position_end: Vec3, time_start: f32, time_end: f32, radius: f32, material: Rc<dyn Material>) -> MovingSphere {
+        MovingSphere {
+            position_start,
+            position_end,
+            time_start,
+            time_end,
+            radius,
+            material
+        }
+    }
+
+    fn center(&self, time: f32) -> Vec3 {
+        let t = (time - self.time_start) / (self.time_end - self.time_start);
+        let t = clamp(t, 0.0, 1.0);
+        (1.0 - t) * self.position_start + t * self.position_end
+    }
+}
+
+impl Hittable for MovingSphere {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let oc = r.origin() - &self.center(r.time());
+        let a = r.direction().dot(r.direction());
+        let b = oc.dot(r.direction());
+        let c = oc.dot(&oc) - sqr(self.radius);
+        let discriminant = sqr(b) - a * c;
+        if discriminant > 0.0 {
+            let temp = (-b - discriminant.sqrt()) / a;
+            if temp < t_max && temp > t_min {
+                let point = r.point_at(temp);
+                return Some(HitRecord {
+                    material: self.material.clone(),
+                    p: point,
+                    normal: (point - self.center(r.time())) / self.radius,
+                    t: temp
+                });
+            }
+
+            let temp = (-b + discriminant.sqrt()) / a;
+            if temp < t_max && temp > t_min {
+                let point = r.point_at(temp);
+                return Some(HitRecord {
+                    material: self.material.clone(),
+                    p: point,
+                    normal: (point - self.center(r.time())) / self.radius,
                     t: temp
                 });
             }

@@ -7,7 +7,7 @@ extern crate rand;
 
 use rand::Rng;
 use camera::Camera;
-use hittable::{Sphere, Hittable, HittableList, Lambertian, Metal, Dielectric};
+use hittable::{Sphere, MovingSphere, Hittable, HittableList, Lambertian, Metal, Dielectric};
 use vec3::{Vec3};
 use ray::Ray;
 use std::rc::Rc;
@@ -41,8 +41,15 @@ fn random_scene() -> Box<dyn Hittable> {
             let center = Vec3::new(a * 0.9 * rng.gen::<f32>(), 0.2, b + 0.9 * rng.gen::<f32>());
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 if choose_mat < 0.8 {
-                    scene.items.push(Box::new(Sphere::new(center, 0.2, Rc::new(
-                        Lambertian::new(Vec3::new(rng.gen::<f32>() * rng.gen::<f32>(), rng.gen::<f32>() * rng.gen::<f32>(), rng.gen::<f32>() * rng.gen::<f32>()).to_linear()))))
+                    scene.items.push(Box::new(MovingSphere::new(
+                        center,
+                        center + Vec3::new(0.0, 0.5, 0.0),
+                        0.0,
+                        1.0,
+                        0.2,
+                        Rc::new(
+                            Lambertian::new(Vec3::new(rng.gen::<f32>() * rng.gen::<f32>(), rng.gen::<f32>() * rng.gen::<f32>(), rng.gen::<f32>() * rng.gen::<f32>()).to_linear())))
+                        ),
                     );
                 } else if choose_mat < 0.95 {
                     scene.items.push(Box::new(Sphere::new(center, 0.2, Rc::new(
@@ -63,8 +70,8 @@ fn random_scene() -> Box<dyn Hittable> {
 }
 
 fn main() {
-    let nx = 800;
-    let ny = 400;
+    let nx = 400;
+    let ny = 200;
     let ns = 100;
 
     println!("P3\n{} {}\n255", nx, ny);
@@ -73,7 +80,7 @@ fn main() {
     let look_to = Vec3::new(4.0, 1.0, 1.0);
     let focus_dist = (look_from - look_to).length();
 
-    let camera = Camera::new(&look_from, &look_to, &Vec3::up(), 20.0, nx as f32 / ny as f32, 0.2, focus_dist);
+    let camera = Camera::new(&look_from, &look_to, &Vec3::up(), 20.0, nx as f32 / ny as f32, 0.2, focus_dist, 1.0);
     /*let world = HittableList {items: vec![
         Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.8, 0.3, 0.3).to_linear())))),
         Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, Rc::new(Lambertian::new(Vec3::new(0.8, 0.8, 0.0).to_linear())))),
@@ -93,7 +100,7 @@ fn main() {
             for _ in 0..ns {
                 let u = (i as f32 + rng.gen::<f32>()) / nx as f32;
                 let v = (j as f32 + rng.gen::<f32>()) / ny as f32;
-                let r = camera.get_ray(u, v);
+                let r = camera.get_ray(u, v, 0.0);
                 col += &color(&r, &*world, 0);
             }
             col /= ns as f32;

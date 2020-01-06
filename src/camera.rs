@@ -1,3 +1,6 @@
+extern crate rand;
+
+use rand::Rng;
 use crate::vec3::{Vec3, random_in_unit_circle};
 use crate::ray::Ray;
 
@@ -10,10 +13,11 @@ pub struct Camera {
     v: Vec3, // up
     //w: Vec3, // -forward
     lens_radius: f32,
+    shutter_time: f32,
 }
 
 impl Camera {
-    pub fn new(look_from: &Vec3, look_at: &Vec3, up: &Vec3, fov: f32, aspect: f32, aperture: f32, focus_dist: f32) -> Camera {
+    pub fn new(look_from: &Vec3, look_at: &Vec3, up: &Vec3, fov: f32, aspect: f32, aperture: f32, focus_dist: f32, shutter_time: f32) -> Camera {
         let theta = fov.to_radians();
         let half_height = (theta / 2.0).tan();
         let half_width = aspect * half_height;
@@ -28,13 +32,16 @@ impl Camera {
             u,
             v,
             //w,
-            lens_radius: aperture / 2.0
+            lens_radius: aperture / 2.0,
+            shutter_time
         }
     }
 
-    pub fn get_ray(&self, s: f32, t: f32) -> Ray {
+    pub fn get_ray(&self, s: f32, t: f32, time_start: f32) -> Ray {
         let rd = self.lens_radius * random_in_unit_circle();
         let offset = self.u * rd.x() + self.v * rd.y();
-        Ray::new(self.origin + &offset, self.lower_left + s * self.horizontal + t * self.vertical - self.origin - offset)
+        let mut rng = rand::thread_rng();
+        let ray_time = time_start + rng.gen::<f32>() * self.shutter_time;
+        Ray::new(self.origin + &offset, self.lower_left + s * self.horizontal + t * self.vertical - self.origin - offset, ray_time)
     }
 }

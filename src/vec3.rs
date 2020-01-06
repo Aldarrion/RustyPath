@@ -7,6 +7,17 @@ pub fn sqr(x: f32) -> f32 {
     x * x
 }
 
+pub fn clamp<T>(x: T, min: T, max: T) -> T
+where T : PartialOrd {
+    if x < min {
+        min
+    } else if x > max {
+        max
+    } else {
+        x
+    }
+}
+
 fn to_linear(srgb_col: f32) -> f32 {
     if srgb_col <= 0.04045 {
         srgb_col / 12.92
