@@ -2,11 +2,11 @@ use crate::vec3::{Vec3, sqr, random_in_unit_sphere, schlick, clamp};
 use crate::ray::Ray;
 use std::vec::Vec;
 use std::boxed::Box;
-use std::rc::Rc;
 use rand::Rng;
+use std::sync::Arc;
 
 
-pub trait Material {
+pub trait Material : Send + Sync {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)>;
 }
 
@@ -99,24 +99,24 @@ impl Material for Dielectric {
 
 
 pub struct HitRecord {
-    pub material: Rc<dyn Material>,
+    pub material: Arc<dyn Material>,
     pub p: Vec3,
     pub normal: Vec3,
     pub t: f32
 }
 
-pub trait Hittable {
+pub trait Hittable : Sync + Send {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
 pub struct Sphere {
     center: Vec3,
-    material: Rc<dyn Material>,
+    material: Arc<dyn Material>,
     radius: f32
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f32, material: Rc<dyn Material>) -> Sphere {
+    pub fn new(center: Vec3, radius: f32, material: Arc<dyn Material>) -> Sphere {
         Sphere {
             center,
             material,
@@ -166,11 +166,11 @@ pub struct MovingSphere {
     time_start: f32,
     time_end: f32,
     radius: f32,
-    material: Rc<dyn Material>,
+    material: Arc<dyn Material>,
 }
 
 impl MovingSphere {
-    pub fn new(position_start: Vec3, position_end: Vec3, time_start: f32, time_end: f32, radius: f32, material: Rc<dyn Material>) -> MovingSphere {
+    pub fn new(position_start: Vec3, position_end: Vec3, time_start: f32, time_end: f32, radius: f32, material: Arc<dyn Material>) -> MovingSphere {
         MovingSphere {
             position_start,
             position_end,
