@@ -70,6 +70,12 @@ impl Vec3 {
         }
     }
 
+    pub fn new_fill(value: f32) -> Vec3 {
+        Vec3 {
+            v: [value, value, value]
+        }
+    }
+
     pub fn v(&self) -> &[f32; 3] {
         &self.v
     }
@@ -92,6 +98,10 @@ impl Vec3 {
     }
     pub fn b(&self) -> f32 {
         self.v[2]
+    }
+
+    pub fn set(&mut self, idx: usize, value: f32) {
+        self.v[idx] = value
     }
 
     pub fn length_sqr(&self) -> f32 {

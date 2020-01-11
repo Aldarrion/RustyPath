@@ -1,6 +1,7 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use std::mem;
+use std::f32;
 
 pub struct AABB {
     min: Vec3,
@@ -12,6 +13,13 @@ impl AABB {
         AABB {
             min,
             max
+        }
+    }
+
+    pub fn new_empty() -> AABB {
+        AABB {
+            min: Vec3::new_fill(f32::MAX),
+            max: Vec3::new_fill(f32::MIN)
         }
     }
 
@@ -38,5 +46,12 @@ impl AABB {
             }
         }
         true
+    }
+
+    pub fn add(&mut self, other: &AABB) {
+        for i in 0..3 {
+            self.min.set(i, self.min.v()[i].min(other.min.v()[i]));
+            self.max.set(i, self.max.v()[i].max(other.max.v()[i]));
+        }
     }
 }

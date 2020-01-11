@@ -108,6 +108,7 @@ pub struct HitRecord {
 
 pub trait Hittable : Sync + Send {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn bouding_box(&self, t0: f32, t1: f32) -> Option<AABB>;
 }
 
 pub struct Sphere {
@@ -158,6 +159,13 @@ impl Hittable for Sphere {
         }
 
         None
+    }
+
+    fn bouding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
+        Some(AABB::new(
+            self.center - Vec3::new_fill(self.radius),
+            self.center + Vec3::new_fill(self.radius),
+        ))
     }
 }
 
@@ -222,6 +230,22 @@ impl Hittable for MovingSphere {
 
         None
     }
+
+    fn bouding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
+        let c0 = self.center(t0);
+        let mut b0 = AABB::new(
+            c0 - Vec3::new_fill(self.radius),
+            c0 + Vec3::new_fill(self.radius)
+        );
+        let c1 = self.center(t1);
+        let b1 = AABB::new(
+            c1 - Vec3::new_fill(self.radius),
+            c1 + Vec3::new_fill(self.radius)
+        );
+
+        b0.add(&b1);
+        Some(b0)
+    }
 }
 
 pub struct HittableList {
@@ -244,6 +268,20 @@ impl Hittable for HittableList {
         }
 
         result
+    }
+
+    fn bouding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
+        let mut result = AABB::new_empty();
+
+        for item in self.items.iter() {
+            if let Some(aabb) = item.bouding_box(t0, t1) {
+                result.add(&aabb);
+            } else {
+                return None;
+            }
+        }
+
+        Some(result)
     }
 }
 
