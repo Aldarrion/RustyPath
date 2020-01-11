@@ -12,6 +12,7 @@ use hittable::{Sphere, MovingSphere, Hittable, HittableList, Lambertian, Metal, 
 use vec3::{Vec3};
 use ray::Ray;
 use std::sync::Arc;
+use std::time::{Instant};
 
 fn color(r: &Ray, world: Arc<dyn Hittable>, depth: i32) -> Vec3 {
     // 0.001 to avoid self-intersections
@@ -71,9 +72,10 @@ fn random_scene() -> Arc<dyn Hittable> {
 }
 
 fn main() {
+    let setup_start = Instant::now();
     const NX: usize = 800;
     const NY: usize = 400;
-    let ns = 200;
+    let ns = 100;
 
     println!("P3\n{} {}\n255", NX, NY);
 
@@ -93,7 +95,10 @@ fn main() {
     let world = random_scene();
 
     let mut image = vec![(0, 0, 0); NX * NY];
-    
+    let setup_duration = setup_start.elapsed();
+    eprintln!("Setup done in: {:?}", setup_duration);
+
+    let tracing_start = Instant::now();
     image
     .par_iter_mut()
     .enumerate()
@@ -116,8 +121,16 @@ fn main() {
         *g = (255.99 * col.g()) as i32;
         *b = (255.99 * col.b()) as i32;
     });
+    let tracing_duration = tracing_start.elapsed();
+    eprintln!("Tracing done in: {:?}", tracing_duration);
 
+    let image_writing_start = Instant::now();
     for (r, g, b) in image.iter() {
         println!("{} {} {}", r, g, b);
     }
+    let image_writing_duration = image_writing_start.elapsed();
+    eprintln!("Image writing done in: {:?}", image_writing_duration);
+    
+    let full_duration = setup_start.elapsed();
+    eprintln!("Done in: {:?}", full_duration);
 }
