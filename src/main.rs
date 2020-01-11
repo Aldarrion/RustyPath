@@ -1,4 +1,5 @@
 use rayon::prelude::*;
+mod aabb;
 mod vec3;
 mod ray;
 mod hittable;

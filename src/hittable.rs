@@ -1,5 +1,6 @@
 use crate::vec3::{Vec3, sqr, random_in_unit_sphere, schlick, clamp};
 use crate::ray::Ray;
+use crate::aabb::AABB;
 use std::vec::Vec;
 use std::boxed::Box;
 use rand::Rng;

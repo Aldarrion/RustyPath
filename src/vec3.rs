@@ -70,6 +70,10 @@ impl Vec3 {
         }
     }
 
+    pub fn v(&self) -> &[f32; 3] {
+        &self.v
+    }
+
     pub fn x(&self) -> f32 {
         self.v[0]
     }
