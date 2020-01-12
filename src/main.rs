@@ -9,7 +9,7 @@ extern crate rand;
 
 use rand::Rng;
 use camera::Camera;
-use hittable::{Sphere, MovingSphere, Hittable, HittableList, Lambertian, Metal, Dielectric};
+use hittable::*;
 use vec3::{Vec3};
 use ray::Ray;
 use std::sync::Arc;
@@ -32,9 +32,9 @@ fn color(r: &Ray, world: Arc<dyn Hittable>, depth: i32) -> Vec3 {
 }
 
 fn random_scene() -> Arc<dyn Hittable> {
-    let mut scene = HittableList { items: vec![] };
-    scene.items.push(Box::new(Sphere::new(Vec3::new(0.0, -1000.0, 0.0), 1000.0, Arc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5).to_linear())))));
-
+    let mut items: Vec<Arc<dyn Hittable>> = vec![];
+    items.push(Arc::new(Sphere::new(Vec3::new(0.0, -1000.0, 0.0), 1000.0, Arc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5).to_linear())))));
+    
     let mut rng = rand::thread_rng();
     for a in -5..5 {
         let a = 2.0 * a as f32;
@@ -44,7 +44,7 @@ fn random_scene() -> Arc<dyn Hittable> {
             let center = Vec3::new(a * 0.9 * rng.gen::<f32>(), 0.2, b + 0.9 * rng.gen::<f32>());
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 if choose_mat < 0.8 {
-                    scene.items.push(Box::new(MovingSphere::new(
+                    items.push(Arc::new(MovingSphere::new(
                         center,
                         center + Vec3::new(0.0, 0.5, 0.0),
                         0.0,
@@ -55,28 +55,30 @@ fn random_scene() -> Arc<dyn Hittable> {
                         ),
                     );
                 } else if choose_mat < 0.95 {
-                    scene.items.push(Box::new(Sphere::new(center, 0.2, Arc::new(
+                    items.push(Arc::new(Sphere::new(center, 0.2, Arc::new(
                         Metal::new(Vec3::new(0.5 * (1.0 + rng.gen::<f32>()), 0.5 * (1.0 + rng.gen::<f32>()), 0.5 * (1.0 + rng.gen::<f32>())).to_linear(), 0.5 * rng.gen::<f32>()))))
                     );
                 } else {
-                    scene.items.push(Box::new(Sphere::new(center, 0.2, Arc::new(Dielectric::new(1.5)))));
+                    items.push(Arc::new(Sphere::new(center, 0.2, Arc::new(Dielectric::new(1.5)))));
                 }
             }
         }
     }
-
-    scene.items.push(Box::new(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, Arc::new(Dielectric::new(1.5)))));
-    scene.items.push(Box::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, Arc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1).to_linear())))));
-    scene.items.push(Box::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0), 1.0, Arc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5).to_linear(), 0.0)))));
-
-    Arc::new(scene)
+    
+    items.push(Arc::new(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, Arc::new(Dielectric::new(1.5)))));
+    items.push(Arc::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, Arc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1).to_linear())))));
+    items.push(Arc::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0), 1.0, Arc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5).to_linear(), 0.0)))));
+    
+    eprintln!("Item count: {}", items.len());
+    //Arc::new(HittableList { items })
+    Arc::new(BVHNode::new(&mut items, 0.0, 1.0))
 }
 
 fn main() {
     let setup_start = Instant::now();
     const NX: usize = 800;
     const NY: usize = 400;
-    let ns = 100;
+    let ns = 50;
 
     println!("P3\n{} {}\n255", NX, NY);
 

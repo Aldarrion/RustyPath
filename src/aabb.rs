@@ -3,6 +3,7 @@ use crate::ray::Ray;
 use std::mem;
 use std::f32;
 
+#[derive(Copy, Clone)]
 pub struct AABB {
     min: Vec3,
     max: Vec3,
@@ -23,13 +24,18 @@ impl AABB {
         }
     }
 
+    pub fn new_surrounding(mut a: AABB, b: &AABB) -> AABB {
+        a.add(b);
+        a
+    }
+
     pub fn min(&self) -> &Vec3 {
         &self.min
     }
 
-    pub fn max(&self) -> &Vec3 {
-        &self.max
-    }
+    // pub fn max(&self) -> &Vec3 {
+    //     &self.max
+    // }
 
     pub fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> bool {
         for a in 0..3 {

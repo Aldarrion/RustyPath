@@ -2,9 +2,11 @@ use crate::vec3::{Vec3, sqr, random_in_unit_sphere, schlick, clamp};
 use crate::ray::Ray;
 use crate::aabb::AABB;
 use std::vec::Vec;
-use std::boxed::Box;
 use rand::Rng;
 use std::sync::Arc;
+//use std::boxed::Box;
+//use std::rc::Rc;
+use std::cmp;
 
 
 pub trait Material : Send + Sync {
@@ -161,7 +163,7 @@ impl Hittable for Sphere {
         None
     }
 
-    fn bouding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
+    fn bouding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
         Some(AABB::new(
             self.center - Vec3::new_fill(self.radius),
             self.center + Vec3::new_fill(self.radius),
@@ -249,7 +251,7 @@ impl Hittable for MovingSphere {
 }
 
 pub struct HittableList {
-    pub items: Vec<Box<dyn Hittable>>
+    pub items: Vec<Arc<dyn Hittable>>
 }
 
 impl Hittable for HittableList {
@@ -282,6 +284,133 @@ impl Hittable for HittableList {
         }
 
         Some(result)
+    }
+}
+
+pub struct BVHNode {
+    left: Arc<dyn Hittable>,
+    right: Arc<dyn Hittable>,
+    bbox: AABB,
+}
+
+trait Axis {
+    fn value() -> usize;
+}
+struct X {}
+impl Axis for X {
+    fn value() -> usize {0}
+}
+struct Y {}
+impl Axis for Y {
+    fn value() -> usize {1}
+}
+struct Z {}
+impl Axis for Z {
+    fn value() -> usize {2}
+}
+
+fn axis_sort<TAxis: Axis>(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>) -> cmp::Ordering {
+    if let (Some(abb), Some(bbb)) = (a.bouding_box(0.0, 0.0), b.bouding_box(0.0, 0.0)) {
+        if abb.min().v()[TAxis::value()] - bbb.min().v()[TAxis::value()] < 0.0 {
+            return cmp::Ordering::Less;
+        } else {
+            return cmp::Ordering::Greater;
+        }
+    }
+
+    panic!("No bounding box int BVHNode constructor");
+}
+
+impl BVHNode {
+    pub fn new (objects: &mut [Arc<dyn Hittable>], t0: f32, t1: f32) -> BVHNode {
+        let axis = rand::thread_rng().gen_range(0, 3);
+        
+        /*eprintln!("++++++++++++");
+
+        for o in objects.iter() {
+            if let Some(bb) = o.bouding_box(0.0, 0.0) {
+                eprintln!("{:?}", bb.min());
+            }
+        }*/
+
+        // Sort by random axis to split in two halves
+        match axis {
+            0 => objects.sort_by(axis_sort::<X>),
+            1 => objects.sort_by(axis_sort::<Y>),
+            2 => objects.sort_by(axis_sort::<Z>),
+            _ => panic!("Invalid axis number"),
+        };
+
+        /*eprintln!("------------");
+
+        for o in objects.iter() {
+            if let Some(bb) = o.bouding_box(0.0, 0.0) {
+                eprintln!("{:?}", bb.min());
+            }
+        }
+
+        eprintln!("____________");*/
+
+        // Split in two halves
+        let (left, right) = if objects.len() == 2 {
+            (objects[0].clone(), objects[1].clone())
+        } else {
+            // TODO(aldarrion): Is all this necessary? Could we exploit the division maybe?
+            let first_half = objects.len() / 2;
+            let second_half = objects.len() - objects.len() / 2;
+            let l = if first_half == 1 {
+                objects[0].clone()
+            } else {
+                Arc::new(BVHNode::new(&mut objects[0..first_half], t0, t1))
+            };
+            let r = if second_half == 1 {
+                objects[1].clone()
+            } else {
+                Arc::new(BVHNode::new(&mut objects[first_half..], t0, t1))
+            };
+            (l, r)
+        };
+
+        // Compute bbox for this node
+        let bbox = if let (Some(lbb), Some(rbb)) = (left.bouding_box(t0, t1), right.bouding_box(t0, t1)) {
+            AABB::new_surrounding(lbb, &rbb)
+        } else {
+            panic!("No bounding box in BVHNode constructor");
+        };
+
+        BVHNode{
+            left,
+            right,
+            bbox
+        }
+    }
+}
+
+impl Hittable for BVHNode {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        if self.bbox.hit(r, t_min, t_max) {
+            let left_hit = self.left.hit(r, t_min, t_max);
+            let right_hit = self.right.hit(r, t_min, t_max);
+            
+            match (left_hit, right_hit) {
+                (Some(left_rec), Some(right_rec)) => {
+                    if left_rec.t < right_rec.t {
+                        return Some(left_rec);
+                    } else {
+                        return Some(right_rec);
+                    }
+                },
+                (Some(left_rec), None) => Some(left_rec),
+                (None, Some(right_rec)) => Some(right_rec),
+                (None, None) => None,
+            }
+        } else {
+            None
+        }
+    }
+
+    fn bouding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        Some(self.bbox)
     }
 }
 
