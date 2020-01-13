@@ -1,11 +1,10 @@
-use crate::vec3::{Vec3, sqr, random_in_unit_sphere, schlick, clamp};
+use crate::vec3::*;
 use crate::ray::Ray;
 use crate::aabb::AABB;
+use crate::texture::*;
 use std::vec::Vec;
 use rand::Rng;
 use std::sync::Arc;
-//use std::boxed::Box;
-//use std::rc::Rc;
 use std::cmp;
 
 
@@ -15,11 +14,11 @@ pub trait Material : Send + Sync {
 
 
 pub struct Lambertian {
-    albedo: Vec3
+    albedo: Box<dyn Texture>,
 }
 
 impl Lambertian {
-    pub fn new(albedo: Vec3) -> Lambertian {
+    pub fn new(albedo: Box<dyn Texture>) -> Lambertian {
         Lambertian {
             albedo
         }
@@ -30,7 +29,7 @@ impl Material for Lambertian {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vec3)> {
         let target = hit.p + hit.normal + random_in_unit_sphere();
         let scattered = Ray::new(hit.p, target - hit.p, ray.time());
-        let attenuation = self.albedo;
+        let attenuation = self.albedo.value(0.0, 0.0, hit.p);
         Some((scattered, attenuation))
     }
 }

@@ -4,6 +4,7 @@ mod vec3;
 mod ray;
 mod hittable;
 mod camera;
+mod texture;
 
 extern crate rand;
 
@@ -14,6 +15,7 @@ use vec3::{Vec3};
 use ray::Ray;
 use std::sync::Arc;
 use std::time::{Instant};
+use texture::*;
 
 fn color(r: &Ray, world: Arc<dyn Hittable>, depth: i32) -> Vec3 {
     // 0.001 to avoid self-intersections
@@ -33,7 +35,12 @@ fn color(r: &Ray, world: Arc<dyn Hittable>, depth: i32) -> Vec3 {
 
 fn random_scene() -> Arc<dyn Hittable> {
     let mut items: Vec<Arc<dyn Hittable>> = vec![];
-    items.push(Arc::new(Sphere::new(Vec3::new(0.0, -1000.0, 0.0), 1000.0, Arc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5).to_linear())))));
+
+    let ground_texture = Box::new(CheckerTexture::new(
+        Box::new(ConstantTexture::new(Vec3::new(0.2, 0.3, 0.1).to_linear())),
+        Box::new(ConstantTexture::new(Vec3::new(0.9, 0.9, 0.9).to_linear())))
+    );
+    items.push(Arc::new(Sphere::new(Vec3::new(0.0, -1000.0, 0.0), 1000.0, Arc::new(Lambertian::new(ground_texture)))));
     
     let mut rng = rand::thread_rng();
     for a in -5..5 {
@@ -51,7 +58,7 @@ fn random_scene() -> Arc<dyn Hittable> {
                         0.3,
                         0.2,
                         Arc::new(
-                            Lambertian::new(Vec3::new(rng.gen::<f32>() * rng.gen::<f32>(), rng.gen::<f32>() * rng.gen::<f32>(), rng.gen::<f32>() * rng.gen::<f32>()).to_linear())))
+                            Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(rng.gen::<f32>() * rng.gen::<f32>(), rng.gen::<f32>() * rng.gen::<f32>(), rng.gen::<f32>() * rng.gen::<f32>()).to_linear())))))
                         ),
                     );
                 } else if choose_mat < 0.95 {
@@ -66,7 +73,7 @@ fn random_scene() -> Arc<dyn Hittable> {
     }
     
     items.push(Arc::new(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, Arc::new(Dielectric::new(1.5)))));
-    items.push(Arc::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, Arc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1).to_linear())))));
+    items.push(Arc::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, Arc::new(Lambertian::new(Box::new(ConstantTexture::new(Vec3::new(0.4, 0.2, 0.1).to_linear())))))));
     items.push(Arc::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0), 1.0, Arc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5).to_linear(), 0.0)))));
     
     eprintln!("Item count: {}", items.len());
@@ -78,7 +85,7 @@ fn main() {
     let setup_start = Instant::now();
     const NX: usize = 800;
     const NY: usize = 400;
-    let ns = 50;
+    let ns = 100;
 
     println!("P3\n{} {}\n255", NX, NY);
 
@@ -86,7 +93,7 @@ fn main() {
     let look_to = Vec3::new(4.0, 1.0, 1.0);
     let focus_dist = (look_from - look_to).length();
 
-    let camera = Camera::new(&look_from, &look_to, &Vec3::up(), 20.0, NX as f32 / NY as f32, 0.2, focus_dist, 1.0);
+    let camera = Camera::new(&look_from, &look_to, &Vec3::up(), 20.0, NX as f32 / NY as f32, 0.1, focus_dist, 0.0);
     /*let world = HittableList {items: vec![
         Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, Rc::new(Lambertian::new(Vec3::new(0.8, 0.3, 0.3).to_linear())))),
         Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, Rc::new(Lambertian::new(Vec3::new(0.8, 0.8, 0.0).to_linear())))),
